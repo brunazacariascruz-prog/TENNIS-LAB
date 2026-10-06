@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tennis Lab & Performance - Gestão de Calçados e Footwork</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased flex flex-col justify-between">
+
+  <!-- ==================== HEADER ==================== -->
+  <header class="bg-slate-950 border-b border-slate-800 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-lime-500 text-slate-950 flex items-center justify-center font-black text-xl shadow-lg shadow-lime-500/20">
+          <i class="fa-solid fa-baseball"></i>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-lg text-white tracking-wide">TENNIS LAB</h1>
+          <p class="text-[11px] text-lime-400 font-bold uppercase tracking-wider">Performance & Calçados</p>
+        </div>
+      </div>
+
+      <!-- User Role Selector & Action -->
+      <div class="flex items-center space-x-3">
+        <div class="bg-slate-900 p-1 rounded-xl border border-slate-800 flex items-center text-xs">
+          <button id="role-btn-student" onclick="switchUserRole('student')" class="px-3 py-1.5 rounded-lg font-bold transition bg-lime-500 text-slate-950">
+            <i class="fa-solid fa-user-graduate mr-1"></i> Atleta
+          </button>
+          <button id="role-btn-teacher" onclick="switchUserRole('teacher')" class="px-3 py-1.5 rounded-lg font-bold transition text-slate-400 hover:text-white">
+            <i class="fa-solid fa-user-ninja mr-1"></i> Treinador
+          </button>
+        </div>
+
+        <button onclick="openSubmitModal()" class="bg-lime-500 hover:bg-lime-400 text-slate-950 font-black px-4 py-2 rounded-xl text-xs transition shadow-lg shadow-lime-500/10 flex items-center gap-1.5">
+          <i class="fa-solid fa-plus text-sm"></i>
+          <span>Nova Análise</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN CONTENT ==================== -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8 flex-grow">
+
+    <!-- STATS DASHBOARD -->
+    <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 flex items-center space-x-4">
+        <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20 text-2xl">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-400 font-semibold uppercase">Análises Aprovadas</p>
+          <p id="stat-approved" class="text-2xl font-black text-white">0</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 flex items-center space-x-4">
+        <div class="p-3 bg-lime-500/10 text-lime-400 rounded-xl border border-lime-500/20 text-2xl">
+          <i class="fa-solid fa-chart-line"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-400 font-semibold uppercase">Média de Desempenho</p>
+          <p id="stat-avg-grade" class="text-2xl font-black text-white">N/A</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 flex items-center space-x-4">
+        <div class="p-3 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20 text-2xl">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-400 font-semibold uppercase">Fila de Análise</p>
+          <p id="stat-pending-count" class="text-2xl font-black text-white">0</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAINEL DO TREINADOR -->
+    <section id="teacher-panel" class="hidden bg-slate-950 border border-slate-800 rounded-3xl p-6 space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-800 pb-4">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-clipboard-check text-lime-400 text-lg"></i>
+          <h2 class="text-lg font-bold text-white">Painel do Treinador / Avaliador</h2>
+        </div>
+        <div class="flex gap-2 overflow-x-auto w-full sm:w-auto">
+          <button id="tab-btn-pending" onclick="switchTeacherTab('pending')" class="pb-2 border-b-2 border-lime-500 text-lime-400 font-bold text-xs flex items-center gap-2 whitespace-nowrap">
+            Fila de Revisão (<span id="pending-count-badge">0</span>)
+          </button>
+          <button id="tab-btn-graded" onclick="switchTeacherTab('graded')" class="pb-2 border-b-2 border-transparent text-slate-400 font-semibold text-xs hover:text-white flex items-center gap-2 whitespace-nowrap">
+            Tabela de Notas
+          </button>
+          <button id="tab-btn-stats" onclick="switchTeacherTab('stats')" class="pb-2 border-b-2 border-transparent text-slate-400 font-semibold text-xs hover:text-white flex items-center gap-2 whitespace-nowrap">
+            Estatísticas por Categoria
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab Pending -->
+      <div id="teacher-tab-pending" class="space-y-3">
+        <div id="pending-projects-container" class="space-y-3"></div>
+      </div>
+
+      <!-- Tab Graded Table -->
+      <div id="teacher-tab-graded" class="hidden overflow-x-auto">
+        <div class="mb-3 flex justify-end">
+          <select id="teacher-turma-select" onchange="renderTeacherTable()" class="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-300 font-bold outline-none">
+            <option value="ALL">Todas as Categoria/Turmas</option>
+            <option value="Sub-18 Pro">Sub-18 Pro</option>
+            <option value="Adulto Amador">Adulto Amador</option>
+            <option value="Atletas Elétrica">Atletas Elétrica</option>
+          </select>
+        </div>
+        <table class="w-full text-left text-xs text-slate-300 border-collapse">
+          <thead>
+            <tr class="bg-slate-900 border-b border-slate-800 text-slate-400">
+              <th class="p-3">Atleta</th>
+              <th class="p-3">Categoria</th>
+              <th class="p-3">Modelo / Título</th>
+              <th class="p-3">Superfície</th>
+              <th class="p-3">Status</th>
+              <th class="p-3">Nota</th>
+              <th class="p-3 text-right">Ação</th>
+            </tr>
+          </thead>
+          <tbody id="teacher-projects-tbody" class="divide-y divide-slate-800/50"></tbody>
+        </table>
+      </div>
+
+      <!-- Tab Stats -->
+      <div id="teacher-tab-stats" class="hidden space-y-4">
+        <div id="class-stats-bars" class="space-y-3 max-w-xl"></div>
+      </div>
+    </section>
+
+    <!-- BARRA DE FILTROS -->
+    <section class="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row gap-4 justify-between items-center">
+      <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+        <div>
+          <select id="filter-status" onchange="renderProjects()" class="bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 rounded-xl px-3 py-2 outline-none focus:border-lime-500">
+            <option value="ALL">Todos os Status</option>
+            <option value="approved">Aprovados</option>
+            <option value="pending">Em Análise</option>
+          </select>
+        </div>
+
+        <div>
+          <select id="filter-surface" onchange="renderProjects()" class="bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 rounded-xl px-3 py-2 outline-none focus:border-lime-500">
+            <option value="ALL">Todas as Superfícies</option>
+            <option value="Saibro">Saibro (Clay)</option>
+            <option value="Quadra Rápida">Quadra Rápida (Hard)</option>
+            <option value="Grama">Grama (Grass)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="relative w-full md:w-72">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-500 text-xs"></i>
+        <input type="text" id="search-input" onkeyup="renderProjects()" placeholder="Buscar atleta, calçado ou título..." class="w-full bg-slate-900 border border-slate-800 text-xs text-slate-200 pl-9 pr-4 py-2 rounded-xl outline-none focus:border-lime-500 placeholder-slate-500">
+      </div>
+    </section>
+
+    <!-- GRID DE PROJETOS -->
+    <section>
+      <div id="empty-state" class="hidden text-center py-16 bg-slate-950 rounded-3xl border border-dashed border-slate-800">
+        <i class="fa-solid fa-box-open text-slate-600 text-4xl mb-3"></i>
+        <p class="font-bold text-slate-300 text-sm">Nenhuma análise ou relatório encontrado</p>
+        <p class="text-xs text-slate-500 mt-1">Tente ajustar seus filtros de busca ou crie uma nova submissão.</p>
+      </div>
+
+      <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </section>
+  </main>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="bg-slate-950 border-t border-slate-800 py-6 text-center text-xs text-slate-500">
+    <p>Tennis Lab & Performance &copy; 2026 - Módulo de Gestão Técnica de Calçados & Footwork</p>
+  </footer>
+
+  <!-- ==================== MODAL: DETALHES & AVALIAÇÃO ==================== -->
+  <div id="modal-project-detail" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl relative my-8">
+      <button onclick="closeModal('modal-project-detail')" class="absolute top-4 right-4 z-10 w-8 h-8 bg-black/60 hover:bg-black rounded-full text-white flex items-center justify-center text-xs transition">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div id="modal-project-content"></div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: ENVIAR ANÁLISE ==================== -->
+  <div id="modal-submit-project" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative my-8 text-xs">
+      <div class="flex justify-between items-center mb-5 border-b border-slate-800 pb-3">
+        <h3 class="font-bold text-base text-white flex items-center gap-2">
+          <i class="fa-solid fa-file-circle-plus text-lime-400"></i> Cadastrar Análise de Tênis
+        </h3>
+        <button onclick="closeModal('modal-submit-project')" class="text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleProjectSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-slate-400 font-bold mb-1">Título do Relatório</label>
+          <input type="text" id="form-title" required placeholder="Ex: Avaliação Tática do Asics Resolution 9" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white outline-none focus:border-lime-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 font-bold mb-1">Categoria / Turma</label>
+            <select id="form-turma" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white outline-none focus:border-lime-500">
+              <option value="Sub-18 Pro">Sub-18 Pro</option>
+              <option value="Adulto Amador">Adulto Amador</option>
+              <option value="Atletas Elétrica">Atletas Elétrica</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 font-bold mb-1">Superfície Principal</label>
+            <select id="form-species" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white outline-none focus:border-lime-500">
+              <option value="Saibro">Saibro (Clay)</option>
+              <option value="Quadra Rápida">Quadra Rápida (Hard)</option>
+              <option value="Grama">Grama (Grass)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 font-bold mb-1">Nome do Atleta</label>
+            <input type="text" id="form-student-name" required placeholder="Nome do atleta" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white outline-none focus:border-lime-500">
+          </div>
+          <div>
+            <label class="block text-slate-400 font-bold mb-1">E-mail do Atleta</label>
+            <input type="email" id="form-student-email" required placeholder="atleta@tenis.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white outline-none focus:border-lime-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-400 font-bold mb-1">Resumo da Análise (Calçado & Estabilidade)</label>
+          <textarea id="form-summary" rows="2" required placeholder="Descreva amortecimento, aderência e durabilidade do tênis..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white outline-none focus:border-lime-500"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-slate-400 font-bold mb-1">Detalhamento Técnico de Footwork / Movimentação</label>
+          <textarea id="form-methodology" rows="2" required placeholder="Análise de deslize no saibro, suporte lateral e arraste de ponta..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white outline-none focus:border-lime-500"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-slate-400 font-bold mb-1">URL da Imagem do Tênis (Opcional)</label>
+          <input type="url" id="form-image-url" placeholder="https://exemplo.com/tenis.jpg" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white outline-none focus:border-lime-500">
+        </div>
+
+        <div class="pt-2 flex gap-3">
+          <button type="button" onclick="closeModal('modal-submit-project')" class="w-1/2 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl transition">
+            Cancelar
+          </button>
+          <button type="submit" class="w-1/2 py-2.5 bg-lime-500 hover:bg-lime-400 text-slate-950 font-black rounded-xl transition shadow">
+            Enviar Análise
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CONTAINER DE TOASTS -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
+
+  <!-- ==================== JAVASCRIPT ==================== -->
+  <script>
+    /* GERENCIAMENTO DE ESTADO */
+    const CLASSES = ['Sub-18 Pro', 'Adulto Amador', 'Atletas Elétrica'];
+    
+    const INITIAL_PROJECTS = [
+      {
+        id: 'tennis-101',
+        title: 'Estabilidade e Suporte Lateral: Asics Gel Resolution 9',
+        studentName: 'Carlos Alcaraz Jr.',
+        studentEmail: 'carlos@tenis.com',
+        turma: 'Sub-18 Pro',
+        species: 'Saibro',
+        summary: 'Ótimo tênis para trocas intensas de fundo de quadra no saibro. O reforço Dynawall no médio pé oferece excelente retenção em deslizes laterais.',
+        methodology: 'Testado em 12 partidas de 3 sets no saibro. Registrado leve desgaste no solado espinha de peixe no pé esquerdo após 15h de uso.',
+        imageUrl: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=600&q=80',
+        status: 'approved',
+        grade: 9.5,
+        feedback: 'Excelente análise técnica detalhando o comportamento da borracha do solado no saibro.',
+        createdAt: '2026-10-01'
+      },
+      {
+        id: 'tennis-102',
+        title: 'Nike Court Zoom Vapor Pro - Análise de Leveza',
+        studentName: 'Beatriz Haddad',
+        studentEmail: 'biacourts@tenis.com',
+        turma: 'Sub-18 Pro',
+        species: 'Quadra Rápida',
+        summary: 'Calçado extremamente leve com ótimo arranque para saques e rede. Amortecimento Zoom Air dinâmico no antepé.',
+        methodology: 'Avaliação de sprints de aproximação de rede. Notada resposta rápida mas menor proteção contra torções acentuadas.',
+        imageUrl: 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?auto=format&fit=crop&w=600&q=80',
+        status: 'pending',
+        grade: null,
+        feedback: '',
+        createdAt: '2026-10-04'
+      }
+    ];
+
+    let state = {
+      currentUser: { role: 'student', email: 'atleta@tenis.com', turma: 'Sub-18 Pro' },
+      projects: JSON.parse(localStorage.getItem('tennis_projects')) || INITIAL_PROJECTS,
+      selectedPresetImg: ''
+    };
+
+    function saveProjectsToStorage() {
+      localStorage.setItem('tennis_projects', JSON.stringify(state.projects));
+    }
+
+    // INICIALIZAÇÃO
+    document.addEventListener('DOMContentLoaded', () => {
+      renderProjects();
+      updateStats();
+    });
+
+    // TROCA DE PAPEL (ATLETA / TREINADOR)
+    function switchUserRole(role) {
+      state.currentUser.role = role;
+      const btnStudent = document.getElementById('role-btn-student');
+      const btnTeacher = document.getElementById('role-btn-teacher');
+      const teacherPanel = document.getElementById('teacher-panel');
+
+      if (role === 'student') {
+        btnStudent.className = "px-3 py-1.5 rounded-lg font-bold transition bg-lime-500 text-slate-950";
+        btnTeacher.className = "px-3 py-1.5 rounded-lg font-bold transition text-slate-400 hover:text-white";
+        teacherPanel.classList.add('hidden');
+      } else {
+        btnTeacher.className = "px-3 py-1.5 rounded-lg font-bold transition bg-lime-500 text-slate-950";
+        btnStudent.className = "px-3 py-1.5 rounded-lg font-bold transition text-slate-400 hover:text-white";
+        teacherPanel.classList.remove('hidden');
+        renderTeacherPanel();
+      }
+      renderProjects();
+    }
+
+    // RENDERIZAÇÃO DA GRID PRINCIPAL
+    function renderProjects() {
+      const grid = document.getElementById('projects-grid');
+      const emptyMsg = document.getElementById('empty-state');
+      
+      const statusVal = document.getElementById('filter-status').value;
+      const surfaceVal = document.getElementById('filter-surface').value;
+      const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+
+      const filtered = state.projects.filter(p => {
+        if (statusVal !== 'ALL' && p.status !== statusVal) return false;
+        if (surfaceVal !== 'ALL' && p.species !== surfaceVal) return false;
+
+        if (searchTerm) {
+          const matchTitle = p.title.toLowerCase().includes(searchTerm);
+          const matchStudent = p.studentName.toLowerCase().includes(searchTerm);
+          const matchSummary = p.summary.toLowerCase().includes(searchTerm);
+          if (!matchTitle && !matchStudent && !matchSummary) return false;
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '';
+        emptyMsg.classList.remove('hidden');
+        return;
+      } else {
+        emptyMsg.classList.add('hidden');
+      }
+
+      grid.innerHTML = filtered.map(p => {
+        const isAuthor = state.currentUser.email === p.studentEmail;
+        const isTeacher = state.currentUser.role === 'teacher';
+
+        let statusBadge = '';
+        if (p.status === 'approved') {
+          statusBadge = `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold px-2.5 py-0.5 rounded-full text-[10px] inline-flex items-center gap-1"><i class="fa-solid fa-check"></i> Validado</span>`;
+        } else if (p.status === 'pending') {
+          statusBadge = `<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold px-2.5 py-0.5 rounded-full text-[10px] inline-flex items-center gap-1"><i class="fa-solid fa-clock"></i> Em Análise</span>`;
+        } else {
+          statusBadge = `<span class="bg-rose-500/20 text-rose-400 border border-rose-500/30 font-bold px-2.5 py-0.5 rounded-full text-[10px] inline-flex items-center gap-1"><i class="fa-solid fa-xmark"></i> Rejeitado</span>`;
+        }
+
+        let gradeDisplay = p.grade !== null && p.grade !== undefined 
+          ? `<div class="text-xs font-black text-lime-400 bg-lime-500/10 px-2.5 py-1 rounded-lg border border-lime-500/20">Nota: ${p.grade} / 10</div>`
+          : `<div class="text-[11px] font-semibold text-slate-500 bg-slate-900 px-2 py-1 rounded-lg">Aguardando Avaliação</div>`;
+
+        return `
+          <div class="bg-slate-950 rounded-2xl border border-slate-800 shadow-xl overflow-hidden flex flex-col justify-between hover:border-slate-700 transition group">
+            <div>
+              <div class="relative h-44 overflow-hidden bg-slate-900">
+                <img src="${escapeHTML(p.imageUrl)}" alt="${escapeHTML(p.title)}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                <div class="absolute top-3 left-3 flex gap-1.5 flex-wrap">
+                  <span class="bg-slate-900/90 backdrop-blur-md text-lime-400 font-black text-[10px] px-2.5 py-1 rounded-lg border border-slate-800">${escapeHTML(p.turma)}</span>
+                  <span class="bg-slate-900/90 backdrop-blur-md text-white font-bold text-[10px] px-2.5 py-1 rounded-lg border border-slate-800">${escapeHTML(p.species)}</span>
+                </div>
+                <div class="absolute top-3 right-3">
+                  ${statusBadge}
+                </div>
+              </div>
+
+              <div class="p-5 space-y-3">
+                <h3 class="font-bold text-sm text-white leading-snug line-clamp-2">${escapeHTML(p.title)}</h3>
+                
+                <div class="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800/80 pb-2">
+                  <span class="font-semibold text-slate-300 truncate max-w-[180px]"><i class="fa-solid fa-user-ninja text-lime-400 mr-1"></i> ${escapeHTML(p.studentName)}</span>
+                  <span class="font-mono text-[10px] bg-slate-900 text-slate-400 px-1.5 py-0.5 rounded border border-slate-800">${escapeHTML(p.studentEmail.split('@')[0])}</span>
+                </div>
+
+                <p class="text-xs text-slate-400 line-clamp-3 leading-relaxed">${escapeHTML(p.summary)}</p>
+              </div>
+            </div>
+
+            <div class="px-5 pb-5 pt-3 border-t border-slate-800/80 flex items-center justify-between bg-slate-900/40">
+              ${gradeDisplay}
+
+              <div class="flex items-center space-x-1">
+                ${(isAuthor || isTeacher) ? `
+                  <button onclick="deleteProject('${p.id}')" title="Excluir relatório" class="text-rose-400 hover:text-rose-300 p-2 text-xs rounded-lg hover:bg-rose-500/10 transition">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                ` : ''}
+                
+                <button onclick="openProjectDetail('${p.id}')" class="bg-lime-500 hover:bg-lime-400 text-slate-950 font-black px-3 py-1.5 rounded-xl text-xs transition flex items-center gap-1 shadow">
+                  <span>Ver Detalhes</span>
+                  <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ABA DO TREINADOR E MODERAÇÃO
+    function switchTeacherTab(tab) {
+      document.getElementById('teacher-tab-pending').classList.add('hidden');
+      document.getElementById('teacher-tab-graded').classList.add('hidden');
+      document.getElementById('teacher-tab-stats').classList.add('hidden');
+
+      const tabs = ['pending', 'graded', 'stats'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        if (btn) btn.className = "pb-2 border-b-2 border-transparent text-slate-400 font-semibold text-xs hover:text-white flex items-center gap-2 whitespace-nowrap";
+      });
+
+      const activeBtn = document.getElementById(`tab-btn-${tab}`);
+      if (activeBtn) activeBtn.className = "pb-2 border-b-2 border-lime-500 text-lime-400 font-bold text-xs flex items-center gap-2 whitespace-nowrap";
+
+      document.getElementById(`teacher-tab-${tab}`).classList.remove('hidden');
+
+      if (tab === 'graded') renderTeacherTable();
+      if (tab === 'stats') renderTeacherStats();
+    }
+
+    function renderTeacherPanel() {
+      const pendingContainer = document.getElementById('pending-projects-container');
+      const pendingCount = document.getElementById('pending-count-badge');
+      const statPending = document.getElementById('stat-pending-count');
+
+      const pendingList = state.projects.filter(p => p.status === 'pending');
+      
+      if (pendingCount) pendingCount.innerText = pendingList.length;
+      if (statPending) statPending.innerText = pendingList.length;
+
+      if (!pendingContainer) return;
+
+      if (pendingList.length === 0) {
+        pendingContainer.innerHTML = `
+          <div class="p-6 text-center bg-slate-900/50 rounded-2xl border border-dashed border-slate-800">
+            <i class="fa-solid fa-circle-check text-emerald-400 text-2xl mb-1"></i>
+            <p class="font-bold text-slate-200 text-xs">Fila de Análise Vazia!</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">Todos os relatórios enviados pelos atletas foram avaliados.</p>
+          </div>
+        `;
+        return;
+      }
+
+      pendingContainer.innerHTML = pendingList.map(p => `
+        <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="bg-lime-500 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded">${escapeHTML(p.turma)}</span>
+              <span class="text-xs font-bold text-lime-400">${escapeHTML(p.species)}</span>
+              <span class="text-[10px] text-slate-500">&bull; ${p.createdAt}</span>
+            </div>
+            <h4 class="font-bold text-sm text-white">${escapeHTML(p.title)}</h4>
+            <p class="text-xs text-slate-400">Atleta: <strong>${escapeHTML(p.studentName)}</strong> (<code class="font-mono text-[10px] text-slate-500">${escapeHTML(p.studentEmail)}</code>)</p>
+          </div>
+
+          <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <button onclick="openProjectDetail('${p.id}')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition border border-slate-700">
+              <i class="fa-solid fa-eye mr-1"></i> Revisar
+            </button>
+            <button onclick="quickApprove('${p.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow transition">
+              <i class="fa-solid fa-check mr-1"></i> Aprovar
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderTeacherTable() {
+      const tbody = document.getElementById('teacher-projects-tbody');
+      const turmaFilter = document.getElementById('teacher-turma-select')?.value || 'ALL';
+      if (!tbody) return;
+
+      let list = state.projects;
+      if (turmaFilter !== 'ALL') {
+        list = list.filter(p => p.turma === turmaFilter);
+      }
+
+      tbody.innerHTML = list.map(p => `
+        <tr class="hover:bg-slate-900/50 transition">
+          <td class="p-3 font-semibold text-slate-200">${escapeHTML(p.studentName)}</td>
+          <td class="p-3"><span class="bg-slate-900 text-lime-400 border border-slate-800 font-extrabold text-[10px] px-2 py-0.5 rounded">${escapeHTML(p.turma)}</span></td>
+          <td class="p-3 font-medium text-white max-w-xs truncate">${escapeHTML(p.title)}</td>
+          <td class="p-3 text-slate-400">${escapeHTML(p.species)}</td>
+          <td class="p-3">
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${p.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}">
+              ${p.status === 'approved' ? 'Aprovado' : 'Em Análise'}
+            </span>
+          </td>
+          <td class="p-3">
+            <input type="number" min="0" max="10" step="0.1" value="${p.grade !== null && p.grade !== undefined ? p.grade : ''}" 
+              onchange="updateGradeInline('${p.id}', this.value)" 
+              placeholder="0.0" 
+              class="w-16 p-1 bg-slate-900 rounded border border-slate-800 text-xs font-bold text-center text-lime-400 focus:border-lime-500 outline-none">
+          </td>
+          <td class="p-3 text-right">
+            <button onclick="openProjectDetail('${p.id}')" class="text-lime-400 hover:text-lime-300 font-bold text-xs">
+              Detalhes
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderTeacherStats() {
+      const barsContainer = document.getElementById('class-stats-bars');
+      if (!barsContainer) return;
+
+      const turmaCounts = {};
+      CLASSES.forEach(c => turmaCounts[c] = 0);
+      state.projects.forEach(p => {
+        if (turmaCounts[p.turma] !== undefined) turmaCounts[p.turma]++;
+      });
+
+      const maxCount = Math.max(...Object.values(turmaCounts), 1);
+
+      barsContainer.innerHTML = CLASSES.map(c => {
+        const count = turmaCounts[c];
+        const pct = Math.round((count / maxCount) * 100);
+        return `
+          <div>
+            <div class="flex justify-between text-xs font-bold text-slate-300 mb-1">
+              <span>${c}</span>
+              <span>${count} análises</span>
+            </div>
+            <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
+              <div class="bg-gradient-to-r from-lime-500 to-emerald-500 h-2 rounded-full" style="width: ${pct}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function quickApprove(id) {
+      const proj = state.projects.find(p => p.id === id);
+      if (proj) {
+        proj.status = 'approved';
+        if (proj.grade === null) proj.grade = 9.0;
+        saveProjectsToStorage();
+        renderProjects();
+        renderTeacherPanel();
+        updateStats();
+        showToast(`Relatório "${proj.title}" validado com nota 9.0!`, 'success');
+      }
+    }
+
+    function updateGradeInline(id, val) {
+      const proj = state.projects.find(p => p.id === id);
+      if (proj) {
+        const numeric = parseFloat(val);
+        if (!isNaN(numeric) && numeric >= 0 && numeric <= 10) {
+          proj.grade = numeric;
+          proj.status = 'approved';
+          saveProjectsToStorage();
+          showToast(`Nota ${numeric} atribuída para ${proj.studentName}`, 'success');
+          updateStats();
+        }
+      }
+    }
+
+    // MODAL DE EXIBIÇÃO E AVALIAÇÃO
+    function openProjectDetail(id) {
+      const proj = state.projects.find(p => p.id === id);
+      if (!proj) return;
+
+      const isTeacher = state.currentUser.role === 'teacher';
+      const container = document.getElementById('modal-project-content');
+
+      container.innerHTML = `
+        <div class="relative h-56 overflow-hidden bg-slate-950">
+          <img src="${escapeHTML(proj.imageUrl)}" class="w-full h-full object-cover opacity-80">
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent flex flex-col justify-end p-6 text-white">
+            <div class="flex gap-2 mb-2">
+              <span class="bg-lime-500 text-slate-950 font-black text-xs px-2.5 py-0.5 rounded">${escapeHTML(proj.turma)}</span>
+              <span class="bg-slate-800 text-lime-400 border border-slate-700 font-bold text-xs px-2.5 py-0.5 rounded">${escapeHTML(proj.species)}</span>
+            </div>
+            <h2 class="text-lg sm:text-xl font-bold leading-tight">${escapeHTML(proj.title)}</h2>
+          </div>
+        </div>
+
+        <div class="p-6 space-y-5 text-xs text-slate-300">
+          <!-- Detalhes do Atleta -->
+          <div class="flex items-center justify-between p-4 bg-slate-950 rounded-2xl border border-slate-800">
+            <div>
+              <p class="text-[10px] text-slate-500 uppercase font-bold">Atleta Avaliado</p>
+              <p class="font-bold text-white text-sm">${escapeHTML(proj.studentName)}</p>
+              <p class="text-[11px] font-mono text-slate-400">${escapeHTML(proj.studentEmail)}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-[10px] text-slate-500 uppercase font-bold">Nota do Desempenho</p>
+              <p class="text-xl font-black text-lime-400">${proj.grade !== null ? proj.grade + ' / 10' : 'Em Avaliação'}</p>
+            </div>
+          </div>
+
+          <div>
+            <h4 class="font-bold text-lime-400 text-[11px] uppercase tracking-wider mb-1">Resumo da Análise</h4>
+            <p class="text-slate-300 leading-relaxed bg-slate-950 p-3 rounded-xl border border-slate-800">${escapeHTML(proj.summary)}</p>
+          </div>
+
+          <div>
+            <h4 class="font-bold text-lime-400 text-[11px] uppercase tracking-wider mb-1">Detalhamento Técnico de Footwork</h4>
+            <p class="text-slate-300 leading-relaxed bg-slate-950 p-3 rounded-xl border border-slate-800">${escapeHTML(proj.methodology)}</p>
+          </div>
+
+          <!-- Seção de Avaliação -->
+          <div class="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-3">
+            <h4 class="font-bold text-white text-xs uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-clipboard-check text-lime-400"></i> Parecer Técnico do Treinador
+            </h4>
+            
+            ${isTeacher ? `
+              <div class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-400 mb-1">Status da Homologação</label>
+                    <select id="modal-eval-status" class="w-full p-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-bold text-slate-200 outline-none">
+                      <option value="approved" ${proj.status === 'approved' ? 'selected' : ''}>Aprovado / Validado</option>
+                      <option value="pending" ${proj.status === 'pending' ? 'selected' : ''}>Em Análise Técnica</option>
+                      <option value="rejected" ${proj.status === 'rejected' ? 'selected' : ''}>Rejeitado / Ajustar</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-400 mb-1">Pontuação de Desempenho (0 a 10)</label>
+                    <input type="number" id="modal-eval-grade" min="0" max="10" step="0.1" value="${proj.grade !== null ? proj.grade : ''}" placeholder="Ex: 9.5" class="w-full p-2 bg-slate-900 border border-slate-800 text-lime-400 rounded-xl text-xs font-bold outline-none">
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-400 mb-1">Parecer Técnico / Recomendações</label>
+                  <textarea id="modal-eval-feedback" rows="2" placeholder="Observações sobre estabilidade, aderência ou movimentação de pés..." class="w-full p-2 bg-slate-900 border border-slate-800 text-slate-200 rounded-xl text-xs outline-none">${escapeHTML(proj.feedback || '')}</textarea>
+                </div>
+
+                <button onclick="saveEvaluation('${proj.id}')" class="w-full py-2.5 bg-lime-500 hover:bg-lime-400 text-slate-950 font-black rounded-xl text-xs transition shadow">
+                  Salvar Avaliação Técnica
+                </button>
+              </div>
+            ` : `
+              <p class="text-xs text-slate-300 italic">${proj.feedback ? escapeHTML(proj.feedback) : 'O treinador ainda não publicou a análise técnica deste relatório.'}</p>
+            `}
+          </div>
+        </div>
+      `;
+
+      document.getElementById('modal-project-detail').classList.remove('hidden');
+    }
+
+    function saveEvaluation(id) {
+      const proj = state.projects.find(p => p.id === id);
+      if (!proj) return;
+
+      const newStatus = document.getElementById('modal-eval-status').value;
+      const newGrade = parseFloat(document.getElementById('modal-eval-grade').value);
+      const newFeedback = document.getElementById('modal-eval-feedback').value;
+
+      proj.status = newStatus;
+      proj.grade = isNaN(newGrade) ? null : newGrade;
+      proj.feedback = newFeedback;
+
+      saveProjectsToStorage();
+      renderProjects();
+      renderTeacherPanel();
+      updateStats();
+      closeModal('modal-project-detail');
+      showToast('Avaliação do atleta salva com sucesso!', 'success');
+    }
+
+    // ENVIO DE FORMULÁRIO
+    function openSubmitModal() {
+      if (state.currentUser.role === 'student') {
+        const studentEmailInput = document.getElementById('form-student-email');
+        if (studentEmailInput) studentEmailInput.value = state.currentUser.email;
+      }
+      document.getElementById('modal-submit-project').classList.remove('hidden');
+    }
+
+    function handleProjectSubmit(e) {
+      e.preventDefault();
+
+      const title = document.getElementById('form-title').value.trim();
+      const turma = document.getElementById('form-turma').value;
+      const surface = document.getElementById('form-species').value;
+      const studentName = document.getElementById('form-student-name').value.trim();
+      const studentEmail = document.getElementById('form-student-email').value.trim();
+      const summary = document.getElementById('form-summary').value.trim();
+      const methodology = document.getElementById('form-methodology').value.trim();
+      const customUrl = document.getElementById('form-image-url').value.trim();
+
+      const imageUrl = customUrl || 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?auto=format&fit=crop&w=600&q=80';
+
+      const newProject = {
+        id: 'tennis-' + Date.now(),
+        title,
+        studentName,
+        studentEmail,
+        turma,
+        species: surface,
+        summary,
+        methodology,
+        imageUrl,
+        status: 'pending',
+        grade: null,
+        feedback: '',
+        createdAt: new Date().toISOString().split('T')[0]
+      };
+
+      state.projects.unshift(newProject);
+      saveProjectsToStorage();
+
+      renderProjects();
+      renderTeacherPanel();
+      updateStats();
+
+      closeModal('modal-submit-project');
+      e.target.reset();
+
+      showToast('Ficha de tênis enviada! Aguarde a revisão do treinador.', 'success');
+    }
+
+    function deleteProject(id) {
+      state.projects = state.projects.filter(p => p.id !== id);
+      saveProjectsToStorage();
+      renderProjects();
+      renderTeacherPanel();
+      updateStats();
+      showToast('Análise excluída do sistema.', 'info');
+    }
+
+    function closeModal(id) {
+      const modal = document.getElementById(id);
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function updateStats() {
+      const approvedCount = state.projects.filter(p => p.status === 'approved').length;
+      const elApproved = document.getElementById('stat-approved');
+      if (elApproved) elApproved.innerText = approvedCount;
+
+      const graded = state.projects.filter(p => p.grade !== null && !isNaN(p.grade));
+      const avgGradeEl = document.getElementById('stat-avg-grade');
+      if (avgGradeEl) {
+        if (graded.length === 0) avgGradeEl.innerText = 'N/A';
+        else {
+          const sum = graded.reduce((acc, curr) => acc + curr.grade, 0);
+          avgGradeEl.innerText = (sum / graded.length).toFixed(1) + ' / 10';
+        }
+      }
+    }
+
+    // SISTEMA DE NOTIFICAÇÕES (TOAST)
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      
+      let bg = 'bg-slate-900 text-lime-300 border-lime-500';
+      let icon = 'fa-circle-info text-lime-400';
+      if (type === 'success') {
+        bg = 'bg-emerald-950 text-emerald-100 border-emerald-600';
+        icon = 'fa-circle-check text-emerald-400';
+      } else if (type === 'error') {
+        bg = 'bg-rose-950 text-rose-100 border-rose-600';
+        icon = 'fa-triangle-exclamation text-rose-400';
+      }
+
+      toast.className = `${bg} border px-4 py-3 rounded-2xl shadow-xl text-xs font-semibold flex items-center space-x-2 transition-all transform translate-y-2 opacity-0 pointer-events-auto max-w-sm`;
+      toast.innerHTML = `<i class="fa-solid ${icon} text-base"></i> <span>${escapeHTML(message)}</span>`;
+
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 50);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // SANITIZAÇÃO CONTRA XSS
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+  </script>
+</body>
+</html>
